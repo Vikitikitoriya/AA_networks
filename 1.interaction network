@@ -1,0 +1,33 @@
+library(readr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(dplyr)
+library(utils)
+
+path <- "/cloud/project/NaPi2b_AA"
+str_data <- list.files(path = file.path(path, "str_data"), full.names = TRUE) 
+
+interactions_data <- list.files(path = file.path(path, "aminoacids_interactions"), full.names = TRUE)
+
+for (i in 1:length(str_data)) {
+  str_data_1 <- read_csv(str_data[i]) 
+  str_data_1$new_column <- paste(str_data_1$resno, str_data_1$resid, sep = "_")
+  for (j in 1:length(interactions_data)) {
+    interactions_data_1 <- read_csv(interactions_data[j]) %>%
+      filter(persent_intractions > 0)
+    
+    networks <- tbl_graph(nodes = str_data_1, edges = interactions_data_1, directed = FALSE)
+    
+    networks_1 <- ggraph(networks) + 
+      geom_edge_link(aes(colour = persent_intractions)) + 
+      geom_node_point() +
+      geom_node_text(aes(label = new_column), repel = TRUE) +
+      labs(edge_width = "str_data_1") +
+      theme_graph()
+    
+    ggsave(filename = paste0("ggraph", j, ".png"), networks_1, height = 15, width = 20, units = "cm")
+  }
+}
